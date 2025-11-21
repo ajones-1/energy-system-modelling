@@ -13,3 +13,13 @@ dependencies = [
     "ruff>=0.14.6",
     "tqdm>=4.67.1",
 ]
+
+[tool.ruff]
+# Enable all default rules (recommended)
+select = ["E", "F", "W"]  # E/W = pycodestyle, F = pyflakes
+
+# Max line length (adjust as needed)
+line-length = 100
+
+# Treat all violations as errors (non-zero exit code)
+fix = false
