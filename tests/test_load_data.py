@@ -9,11 +9,18 @@ def test_load_data_uses_cache(tmp_path):
     cache_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Create sample cached data
-    cached_data = pd.DataFrame({'value': [1, 2, 3]})
-    cached_data.to_csv(cache_file, index=False)
+    cached_data = pd.DataFrame(
+        {'value': [1, 2, 3]},
+        index=pd.MultiIndex.from_tuples([('A', 1), ('A', 2), ('B', 1)], names=['level1', 'level2'])
+    )
+    cached_data.to_csv(cache_file, index=True)
 
     # Call load_data with use_cache=True
-    result = load_data(url="example_data.csv", file_path=str(cache_file), use_cache=True)
+    result = load_data(url="example_data.csv",
+        file_path=str(cache_file),
+        use_cache=True,
+        index_col=['level1', 'level2']
+    )
 
     # Assert the cached data was loaded
     pd.testing.assert_frame_equal(result, cached_data)

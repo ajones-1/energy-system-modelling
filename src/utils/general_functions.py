@@ -5,7 +5,7 @@ from loguru import logger
 def get_repo_root():
     return Path(__file__).parent.parent.parent
 
-def load_data(url: str, file_path: str, use_cache: bool = True) -> pd.DataFrame:
+def load_data(url: str, file_path: str, use_cache: bool = True, index_col=None) -> pd.DataFrame:
     """
     Loads data from a URL or from a cached file.
 
@@ -19,7 +19,7 @@ def load_data(url: str, file_path: str, use_cache: bool = True) -> pd.DataFrame:
     """
     if use_cache:
         try:
-            data = pd.read_csv(f"{file_path}")
+            data = pd.read_csv(f"{file_path}", index_col=index_col)
             logger.info(f"Loaded cached data from {file_path}.")
             return data
         except FileNotFoundError:

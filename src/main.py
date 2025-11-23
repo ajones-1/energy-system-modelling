@@ -16,7 +16,12 @@ def main():
     # Load data
     year = 2030
     url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
-    costs_df = load_data(url, f"{REPO_ROOT}/data/costs_{year}.csv", use_cache=True)
+    costs_df = load_data(
+        url,
+        f"{REPO_ROOT}/data/costs_{year}.csv",
+        use_cache=True,
+        index_col=[0, 1]
+    )
 
     costs_df.loc[costs_df.unit.str.contains("/kW"), "value"] *= 1e3
     costs_df = costs_df.value.unstack().fillna({"discount rate": 0.07, "lifetime": 20, "FOM": 0})
