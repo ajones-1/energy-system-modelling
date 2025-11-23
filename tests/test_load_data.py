@@ -18,11 +18,26 @@ def test_load_data_uses_cache(tmp_path):
     # Assert the cached data was loaded
     pd.testing.assert_frame_equal(result, cached_data)
 
+def test_load_data_downloads_when_use_cache_false(tmp_path):
+    """Test that load_data() downloads data when use_cache=False."""
+    # Define a mock URL and cache file path
+    url = "https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_2030.csv"
+    cache_file = tmp_path / "data" / "test_file.csv"
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Call load_data with use_cache=False
+    result = load_data(url=url, file_path=str(cache_file), use_cache=False)
+
+    # Assert that data was downloaded and saved to cache
+    assert cache_file.exists()
+    assert not result.empty
+
 def test_load_data_downloads_when_no_cache(tmp_path):
     """Test that load_data() downloads data when cache is missing."""
     # Define a mock URL and cache file path
     url = "https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_2030.csv"
     cache_file = tmp_path / "data" / "test_file.csv"
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Ensure the cache file does not exist
     if cache_file.exists():
