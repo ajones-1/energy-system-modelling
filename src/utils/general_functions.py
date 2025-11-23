@@ -27,7 +27,7 @@ def load_data(url: str, file_path: str, use_cache: bool = True, index_col=None) 
 
     # Download data (either use_cache=False or cache loading failed)
     logger.info(f"Downloading data from {url}...")
-    data = pd.read_csv(url, index_col=[0, 1])
+    data = pd.read_csv(url, index_col=index_col)
     data.to_csv(f"{file_path}")
     logger.info(f"Saved data to {file_path}.")
 
