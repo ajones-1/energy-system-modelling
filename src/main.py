@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from loguru import logger
+import json
 import pypsa
 from pypsa.common import annuity
 
@@ -28,7 +29,9 @@ def main():
     # Load time series data
     resolution = 3  # hours
     url = "https://tubcloud.tu-berlin.de/s/9toBssWEdaLgHzq/download/time-series.csv"
-    time_series_df = load_data(url, f"{REPO_ROOT}/data/time-series_{year}.csv", use_cache=True)[::resolution]
+    time_series_df = load_data(
+        url, f"{REPO_ROOT}/data/time-series_{year}.csv", use_cache=True
+    )[::resolution]
 
     # Initialise model
     n = pypsa.Network()
@@ -38,29 +41,12 @@ def main():
 
     n.snapshot_weightings.loc[:, :] = resolution
 
-    # Add carriers for plotting
-    carriers = [
-        "wind",
-        "solar",
-        "hydrogen storage",
-        "battery storage",
-        "load shedding",
-        "electrolysis",
-        "turbine",
-        "electricity",
-        "hydrogen",
-    ]
-    colors = [
-        "dodgerblue",
-        "gold",
-        "black",
-        "yellowgreen",
-        "darkorange",
-        "magenta",
-        "red",
-        "grey",
-        "grey",
-    ]
+    # Add carriers for plotting, load from config file
+    with open(f"{REPO_ROOT}/config/carriers.json") as f:
+        carriers_config = json.load(f)
+    carriers = list(carriers_config["carriers"].keys())
+    colors = list(carriers_config["carriers"].values())
+
     n.add("Carrier", carriers, color=colors)
     logger.info("Added carriers to the network.")
 
