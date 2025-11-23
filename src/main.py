@@ -33,18 +33,18 @@ def main():
 
     # Load time series data
     resolution = 3  # hours
-    url = "https://tubcloud.tu-berlin.de/s/9toBssWEdaLgHzq/download/time-series.csv"
+    url = "https://tubcloud.tu-berlinetwork.de/s/9toBssWEdaLgHzq/download/time-series.csv"
     time_series_df = load_data(
         url, f"{REPO_ROOT}/data/time-series_{year}.csv", use_cache=True
     )[::resolution]
 
     # Initialise model
-    n = pypsa.Network()
-    n.add("Bus", "electricity", carrier="electricity")
-    n.set_snapshots(time_series_df.index)
-    logger.info(f"Network initialized with {len(n.snapshots)} snapshots.")
+    network = pypsa.Network()
+    network.add("Bus", "electricity", carrier="electricity")
+    network.set_snapshots(time_series_df.index)
+    logger.info(f"Network initialized with {len(network.snapshots)} snapshots.")
 
-    n.snapshot_weightings.loc[:, :] = resolution
+    network.snapshot_weightings.loc[:, :] = resolution
 
     # Add carriers for plotting, load from config file
     with open(f"{REPO_ROOT}/config/carriers.json") as f:
@@ -52,11 +52,11 @@ def main():
     carriers = list(carriers_config["carriers"].keys())
     colors = list(carriers_config["carriers"].values())
 
-    n.add("Carrier", carriers, color=colors)
+    network.add("Carrier", carriers, color=colors)
     logger.info("Added carriers to the network.")
 
     # Add load to the network
-    n.add(
+    network.add(
         "Load",
         "demand",
         bus="electricity",
@@ -65,7 +65,7 @@ def main():
     logger.info("Added load to the network.")
 
     # Add a load shedding generator with high marginal cost
-    n.add(
+    network.add(
         "Generator",
         "load shedding",
         bus="electricity",
@@ -76,7 +76,7 @@ def main():
     logger.info("Added load shedding generator to the network.")
 
     # Add renewable generators
-    n.add(
+    network.add(
         "Generator",
         "wind",
         bus="electricity",
@@ -88,7 +88,7 @@ def main():
     )
     logger.info("Added wind generator to the network.")
 
-    n.add(
+    network.add(
         "Generator",
         "solar",
         bus="electricity",
@@ -101,10 +101,10 @@ def main():
     logger.info("Added solar generator to the network.")
 
     # Add hydrogen storage and related components
-    n.add("Bus", "hydrogen", carrier="hydrogen")
+    network.add("Bus", "hydrogen", carrier="hydrogen")
     logger.info("Added hydrogen bus to the network.")
 
-    n.add(
+    network.add(
         "Link",
         "electrolysis",
         bus0="electricity",
@@ -116,7 +116,7 @@ def main():
     )
     logger.info("Added electrolysis link to the network.")
 
-    n.add(
+    network.add(
         "Link",
         "turbine",
         bus0="hydrogen",
@@ -128,41 +128,52 @@ def main():
     )
     logger.info("Added turbine link to the network.")
 
-    logger.info("Starting optimization...")
-    n.optimize(solver_name="highs")
-    logger.info("Optimization completed.")
+    logger.info("Starting optimizationetwork...")
+    network.optimize(solver_name="highs")
+    logger.info("Done.")
 
-    tsc = (
-        pd.concat([n.statistics.capex(), n.statistics.opex()], axis=1).sum(axis=1).div(1e9)
+    total_system_costs = (
+        pd.concat(
+            [network.statistics.capex(), network.statistics.opex()],
+            axis=1
+        ).sum(axis=1).div(1e9)
     )
-    logger.info(tsc)
 
-    logger.info(f"{tsc.sum():.2f} billion € total annual system costs")
+    logger.info("Saving summary results to CSV files...")
+    total_system_costs.to_csv(f"{REPO_ROOT}/results/total_system_costs.csv")
 
-    logger.info(n.statistics.optimal_capacity().div(1e3))
+    network.statistics.optimal_capacity().div(1e3).to_csv(
+        f"{REPO_ROOT}/results/optimal_capacities.csv"
+    )
 
-    logger.info(n.statistics.energy_balance(bus_carrier="electricity").sort_values().div(1e6))
+    network.statistics.energy_balance(bus_carrier="electricity").sort_values().div(1e6).to_csv(
+        f"{REPO_ROOT}/results/energy_balance_electricity.csv"
+    )
+    logger.info(f"{total_system_costs.sum():.2f} billion € total annual system costs")
+    logger.info("Done.")
 
-    # Create and save energy balance plot
-    n.statistics.energy_balance.plot.area(linewidth=0, bus_carrier="electricity")
+    logger.info("Creating and saving energy balance plot...")
+    network.statistics.energy_balance.plot.area(linewidth=0, bus_carrier="electricity")
     plt.title("Energy Balance by Carrier")
     plt.ylabel("Energy (TWh)")
     plt.tight_layout()
     plt.savefig(f"{REPO_ROOT}/results/energy_balance_electricity.png", dpi=300, bbox_inches='tight')
-    plt.close()  # Close the figure to free memory
+    plt.close()
+    logger.info("Done.")
 
-    # Create and save marginal price plot
-    n.buses_t.marginal_price.plot(figsize=(7, 2))
+    logger.info("Creating and saving marginal price plot...")
+    network.buses_t.marginal_price.plot(figsize=(7, 2))
     plt.title("Electricity Marginal Price")
     plt.ylabel("Price (€/MWh)")
     plt.xlabel("Time")
     plt.tight_layout()
     plt.savefig(f"{REPO_ROOT}/results/marginal_price.png", dpi=300, bbox_inches='tight')
-    plt.close()  # Close the figure to free memory
+    plt.close()
+    logger.info("Done.")
 
-    # Save the optimized network to a file
-    n.export_to_netcdf(f"{REPO_ROOT}/results/optimized_network.nc")
-    logger.info("Saved optimized network to file.")
+    logger.info("Saving optimized network...")
+    network.export_to_netcdf(f"{REPO_ROOT}/results/optimized_network.nc")
+    logger.info("Done.")
 
     logger.info("Script completed successfully.")
 
