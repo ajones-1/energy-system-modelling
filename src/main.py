@@ -35,7 +35,7 @@ def main():
     resolution = 3  # hours
     url = "https://tubcloud.tu-berlinetwork.de/s/9toBssWEdaLgHzq/download/time-series.csv"
     time_series_df = load_data(
-        url, f"{REPO_ROOT}/data/time-series_{year}.csv", use_cache=True
+        url, f"{REPO_ROOT}/data/time_series_{year}.csv", use_cache=True
     )[::resolution]
 
     # Initialise model
@@ -128,7 +128,7 @@ def main():
     )
     logger.info("Added turbine link to the network.")
 
-    logger.info("Starting optimizationetwork...")
+    logger.info("Starting optimization...")
     network.optimize(solver_name="highs")
     logger.info("Done.")
 
