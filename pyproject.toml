@@ -17,11 +17,12 @@ dependencies = [
 ]
 
 [tool.ruff]
-# Enable all default rules (recommended)
-select = ["E", "F", "W"]  # E/W = pycodestyle, F = pyflakes
-
 # Max line length (adjust as needed)
 line-length = 100
 
 # Treat all violations as errors (non-zero exit code)
 fix = false
+
+[tool.ruff.lint]
+# Enable all default rules (recommended)
+select = ["E", "F", "W"]  # E/W = pycodestyle, F = pyflakes

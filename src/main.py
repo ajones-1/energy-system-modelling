@@ -9,18 +9,15 @@ from utils.general_functions import get_repo_root, load_data
 
 REPO_ROOT = get_repo_root()
 
-def main():
 
+def main():
     logger.info("Starting energy system optimization model...")
 
     # Load data
     year = 2030
     url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
     costs_df = load_data(
-        url,
-        f"{REPO_ROOT}/data/costs_{year}.csv",
-        use_cache=True,
-        index_col=[0, 1]
+        url, f"{REPO_ROOT}/data/costs_{year}.csv", use_cache=True, index_col=[0, 1]
     )
 
     costs_df.loc[costs_df.unit.str.contains("/kW"), "value"] *= 1e3
@@ -34,9 +31,9 @@ def main():
     # Load time series data
     resolution = 3  # hours
     url = "https://tubcloud.tu-berlinetwork.de/s/9toBssWEdaLgHzq/download/time-series.csv"
-    time_series_df = load_data(
-        url, f"{REPO_ROOT}/data/time_series_{year}.csv", use_cache=True
-    )[::resolution]
+    time_series_df = load_data(url, f"{REPO_ROOT}/data/time_series_{year}.csv", use_cache=True)[
+        ::resolution
+    ]
 
     # Initialise model
     network = pypsa.Network()
@@ -133,10 +130,9 @@ def main():
     logger.info("Done.")
 
     total_system_costs = (
-        pd.concat(
-            [network.statistics.capex(), network.statistics.opex()],
-            axis=1
-        ).sum(axis=1).div(1e9)
+        pd.concat([network.statistics.capex(), network.statistics.opex()], axis=1)
+        .sum(axis=1)
+        .div(1e9)
     )
 
     logger.info("Saving summary results to CSV files...")
@@ -157,7 +153,7 @@ def main():
     plt.title("Energy Balance by Carrier")
     plt.ylabel("Energy (TWh)")
     plt.tight_layout()
-    plt.savefig(f"{REPO_ROOT}/results/energy_balance_electricity.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{REPO_ROOT}/results/energy_balance_electricity.png", dpi=300, bbox_inches="tight")
     plt.close()
     logger.info("Done.")
 
@@ -167,7 +163,7 @@ def main():
     plt.ylabel("Price (€/MWh)")
     plt.xlabel("Time")
     plt.tight_layout()
-    plt.savefig(f"{REPO_ROOT}/results/marginal_price.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{REPO_ROOT}/results/marginal_price.png", dpi=300, bbox_inches="tight")
     plt.close()
     logger.info("Done.")
 
@@ -176,6 +172,7 @@ def main():
     logger.info("Done.")
 
     logger.info("Script completed successfully.")
+
 
 if __name__ == "__main__":
     main()
