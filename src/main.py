@@ -23,9 +23,7 @@ def main():
     # Load data
     year = 2030
     url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
-    costs_df = load_data(
-        url, f"{data_dir}/costs_{year}.csv", use_cache=True, index_col=[0, 1]
-    )
+    costs_df = load_data(url, f"{data_dir}/costs_{year}.csv", use_cache=True, index_col=[0, 1])
 
     costs_df.loc[costs_df.unit.str.contains("/kW"), "value"] *= 1e3
     costs_df = costs_df.value.unstack().fillna({"discount rate": 0.07, "lifetime": 20, "FOM": 0})
@@ -145,9 +143,7 @@ def main():
     logger.info("Saving summary results to CSV files...")
     total_system_costs.to_csv(f"{results_dir}/total_system_costs.csv")
 
-    network.statistics.optimal_capacity().div(1e3).to_csv(
-        f"{results_dir}/optimal_capacities.csv"
-    )
+    network.statistics.optimal_capacity().div(1e3).to_csv(f"{results_dir}/optimal_capacities.csv")
 
     network.statistics.energy_balance(bus_carrier="electricity").sort_values().div(1e6).to_csv(
         f"{results_dir}/energy_balance_electricity.csv"
