@@ -1,7 +1,8 @@
+import os
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
 from loguru import logger
-import json
 import pypsa
 from pypsa.common import annuity
 
@@ -13,11 +14,17 @@ REPO_ROOT = get_repo_root()
 def main():
     logger.info("Starting energy system optimization model...")
 
+    # Create results and data directory if they don't exist
+    results_dir = f"{REPO_ROOT}/results"
+    data_dir = f"{REPO_ROOT}/data"
+    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(data_dir, exist_ok=True)
+
     # Load data
     year = 2030
     url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
     costs_df = load_data(
-        url, f"{REPO_ROOT}/data/costs_{year}.csv", use_cache=True, index_col=[0, 1]
+        url, f"{data_dir}/costs_{year}.csv", use_cache=True, index_col=[0, 1]
     )
 
     costs_df.loc[costs_df.unit.str.contains("/kW"), "value"] *= 1e3
@@ -31,7 +38,7 @@ def main():
     # Load time series data
     resolution = 3  # hours
     url = "https://tubcloud.tu-berlinetwork.de/s/9toBssWEdaLgHzq/download/time-series.csv"
-    time_series_df = load_data(url, f"{REPO_ROOT}/data/time_series_{year}.csv", use_cache=True)[
+    time_series_df = load_data(url, f"{data_dir}/time_series_{year}.csv", use_cache=True)[
         ::resolution
     ]
 
@@ -136,14 +143,14 @@ def main():
     )
 
     logger.info("Saving summary results to CSV files...")
-    total_system_costs.to_csv(f"{REPO_ROOT}/results/total_system_costs.csv")
+    total_system_costs.to_csv(f"{results_dir}/total_system_costs.csv")
 
     network.statistics.optimal_capacity().div(1e3).to_csv(
-        f"{REPO_ROOT}/results/optimal_capacities.csv"
+        f"{results_dir}/optimal_capacities.csv"
     )
 
     network.statistics.energy_balance(bus_carrier="electricity").sort_values().div(1e6).to_csv(
-        f"{REPO_ROOT}/results/energy_balance_electricity.csv"
+        f"{results_dir}/energy_balance_electricity.csv"
     )
     logger.info(f"{total_system_costs.sum():.2f} billion € total annual system costs")
     logger.info("Done.")
@@ -153,7 +160,7 @@ def main():
     plt.title("Energy Balance by Carrier")
     plt.ylabel("Energy (TWh)")
     plt.tight_layout()
-    plt.savefig(f"{REPO_ROOT}/results/energy_balance_electricity.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"{results_dir}/energy_balance_electricity.png", dpi=300, bbox_inches="tight")
     plt.close()
     logger.info("Done.")
 
@@ -163,12 +170,12 @@ def main():
     plt.ylabel("Price (€/MWh)")
     plt.xlabel("Time")
     plt.tight_layout()
-    plt.savefig(f"{REPO_ROOT}/results/marginal_price.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"{results_dir}/marginal_price.png", dpi=300, bbox_inches="tight")
     plt.close()
     logger.info("Done.")
 
     logger.info("Saving optimized network...")
-    network.export_to_netcdf(f"{REPO_ROOT}/results/optimized_network.nc")
+    network.export_to_netcdf(f"{results_dir}/optimized_network.nc")
     logger.info("Done.")
 
     logger.info("Script completed successfully.")
