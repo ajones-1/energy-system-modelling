@@ -9,6 +9,7 @@ This script determines the optimal generation portfolio to meet:
 It compares different generation mixes and evaluates their technical and economic feasibility.
 """
 
+import argparse
 import json
 import os
 from typing import Any
@@ -617,10 +618,39 @@ def save_results(results: dict[str, Any], network: pypsa.Network, output_dir: st
     logger.info(f"Results saved to {output_dir}")
 
 
-def main() -> None:
+def parse_arguments() -> argparse.Namespace:
+    """
+    Parse command-line arguments for the optimization script.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Optimal Generation Portfolio Analysis with emissions and baseload constraints"
+    )
+    parser.add_argument(
+        "--co2-limit",
+        type=float,
+        default=50,
+        help="Maximum emissions intensity in gCO2/kWh (default: 50)",
+    )
+    parser.add_argument(
+        "--baseload",
+        type=float,
+        default=1000,
+        help="Minimum continuous baseload requirement in MW (default: 1000)",
+    )
+    return parser.parse_args()
+
+
+def main(co2_limit: float = 50, baseload_mw: float = 1000) -> None:
     """
     This functions constructs a PyPSA network and optimizes it under emissions and baseload
     constraints, then analyzes and visualizes the results.
+
+    Args:
+        co2_limit (float): Emissions limit in gCO2/kWh
+        baseload_mw (float): Baseload requirement in MW
     """
     logger.info("=" * 80)
     logger.info("Optimal Generation Portfolio Analysis")
@@ -628,8 +658,6 @@ def main() -> None:
 
     # Parameters
     YEAR = 2030
-    CO2_LIMIT = 50  # gCO2/kWh
-    BASELOAD_MW = 1000  # MW
 
     results_dir = f"{REPO_ROOT}/results/portfolio_analysis"
     os.makedirs(results_dir, exist_ok=True)
@@ -639,17 +667,17 @@ def main() -> None:
 
     # Create and optimize network
     network, costs_df, total_load = create_constrained_network(
-        data_dir=data_dir, year=YEAR, co2_limit=CO2_LIMIT, baseload_mw=BASELOAD_MW
+        data_dir=data_dir, year=YEAR, co2_limit=co2_limit, baseload_mw=baseload_mw
     )
 
     # Optimize
-    network = optimize_with_emissions_constraint(network, co2_limit=CO2_LIMIT)
+    network = optimize_with_emissions_constraint(network, co2_limit=co2_limit)
 
     # Save the network after optimization
     network.export_to_netcdf(f"{results_dir}/optimized_network.nc")
 
     # Analyze results
-    results = analyze_results(network, total_load, co2_limit=CO2_LIMIT)
+    results = analyze_results(network, total_load, co2_limit=co2_limit)
 
     # Visualize network topology
     visualize_network_topology(network, results_dir)
@@ -665,10 +693,10 @@ def main() -> None:
     logger.info("SUMMARY")
     logger.info("=" * 80)
     logger.info(f"Emissions Intensity: {results['emissions_intensity']:.2f} gCO2/kWh")
-    logger.info(f"Target: < {CO2_LIMIT} gCO2/kWh")
+    logger.info(f"Target: < {co2_limit} gCO2/kWh")
     logger.info(f"Status: {'✓ MEETS TARGET' if results['meets_co2_limit'] else '✗ EXCEEDS TARGET'}")
     logger.info(f"\nTotal System Cost: €{results['total_cost_bn_eur']:.2f} billion")
-    logger.info(f"Baseload Requirement: {BASELOAD_MW} MW")
+    logger.info(f"Baseload Requirement: {baseload_mw} MW")
     logger.info(f"Minimum Generation: {results['min_generation_mw']:.1f} MW")
     logger.info("=" * 80)
 
@@ -677,4 +705,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_arguments()
+    main(co2_limit=args.co2_limit, baseload_mw=args.baseload)
