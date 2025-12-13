@@ -1,11 +1,17 @@
 # Energy System Modelling
 
-A Python project for energy system analysis and modelling.
+A Python project for optimizing and analyzing energy networks using PyPSA (Python for Power System 
+Analysis). The project includes tools for energy system optimization with emissions constraints, 
+baseload requirements. The analysis includes marginal pricing, energy source mix and generation 
+dispactch. For example here is the generation dispatch for a CO2 limit of 250gCO2/kWh and baseload
+requirement of 1000MW.
+
+![Generation Dispatch](images/generation_dispatch.png)
 
 ## Prerequisites
 
 - Python 3.11 or higher
-- Git (for cloning the repository)
+- Git
 
 ## Setup Instructions
 
@@ -18,7 +24,8 @@ cd energy-system-modelling
 
 ### 2. Install uv (Python Package Manager)
 
-uv is a fast Python package manager and project manager written in Rust. Choose one of the installation methods below:
+uv is a fast Python package manager and project manager written in Rust. 
+Choose one of the installation methods below:
 
 #### Windows (PowerShell)
 ```powershell
@@ -82,22 +89,41 @@ python src/main.py
 
 ```
 energy-system-modelling/
-├── .venv/              # Virtual environment (created after setup)
-├── data/               # Data files
-├── results/            # Output results
-├── src/                # Source code
-├── pyproject.toml      # Project configuration
-└── README.md           # This file
+├── .venv/                      # Virtual environment (created after setup)
+├── data/                      data
+├── notebooks/ 
+├── results/
+├── src/                        # Source code
+│   ├── __init__.py
+│   ├── example_script.py      # Simple example optimization
+│   ├── main.py                # Main portfolio analysis script
+│   ├── config/                # Configuration files
+│   │   ├── carriers.json      # Energy carrier definitions and colors
+│   │   └── config.py          # Emission factors and constants
+│   └── utils/                 # Utility functions
+│       ├── __init__.py
+│       └── general_functions.py  # Data loading and helper functions
+├── tests/                      # Unit tests
+│   ├── __init__.py
+│   └── test_load_data.py      # Tests for data loading functions
+├── Makefile                    # Build automation commands
+├── pyproject.toml             # Project configuration and dependencies
+└── README.md                  # This file
 ```
 
 ### Running the Project
+#### Ensure virtual environment is activated
 ```bash
-# Ensure virtual environment is activated
 .venv\Scripts\activate  # Windows
 .venv/bin/activate      # macOS/Linux
-
-# Or run other scripts
+```
+#### Run the main script with default inputs
+```bash
 python src/main.py
+```
+#### Run with custom parameters
+```bash
+python src/main.py --co2-limit 30 --baseload 1500
 ```
 
 ### Deactivating the Environment
@@ -105,17 +131,3 @@ python src/main.py
 # When you're done working
 deactivate
 ```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Python version not found**: Ensure Python 3.11+ is installed on your system
-2. **uv command not found**: Restart your terminal after installing uv, or add it to your PATH
-3. **Permission errors on Windows**: Run PowerShell as Administrator if needed
-4. **Virtual environment not activating**: Ensure you're in the project root directory
-
-### Getting Help
-
-- Check [uv documentation](https://docs.astral.sh/uv/) for uv-specific issues
-- For Python environment issues, verify your Python installation with `python --version`
