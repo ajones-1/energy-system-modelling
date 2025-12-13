@@ -6,6 +6,9 @@ from loguru import logger
 def get_repo_root():
     return Path(__file__).parent.parent.parent
 
+def get_package_root():
+    return Path(__file__).parent.parent
+
 
 def load_data(url: str, file_path: str, use_cache: bool = True, index_col=None) -> pd.DataFrame:
     """

@@ -19,13 +19,11 @@ import pypsa
 from loguru import logger
 from pypsa.common import annuity
 
-from utils.general_functions import get_repo_root, load_data
+from utils.general_functions import get_repo_root, get_package_root, load_data
 from config.config import EMISSION_FACTORS
 
 REPO_ROOT = get_repo_root()
-
-# Emission factors (gCO2/kWh) - based on lifecycle emissions
-
+PACKAGE_DIR = get_package_root()
 
 def create_constrained_network(
     data_dir: str, year: int = 2030, co2_limit: float = 50, baseload_mw: float = 1000
@@ -78,7 +76,7 @@ def create_constrained_network(
     logger.info(f"Network initialized with {len(network.snapshots)} snapshots.")
 
     # Add carriers
-    with open(f"{REPO_ROOT}/config/carriers.json") as f:
+    with open(PACKAGE_DIR / "config" / "carriers.json") as f:
         carriers_config = json.load(f)
     carriers = list(carriers_config["carriers"].keys())
     colors = list(carriers_config["carriers"].values())
@@ -619,7 +617,10 @@ def save_results(results: dict[str, Any], network: pypsa.Network, output_dir: st
 
 
 def main() -> None:
-    """Main execution function."""
+    """
+    This functions constructs a PyPSA network and optimizes it under emissions and baseload 
+    constraints, then analyzes and visualizes the results.
+    """
     logger.info("=" * 80)
     logger.info("Optimal Generation Portfolio Analysis")
     logger.info("=" * 80)
