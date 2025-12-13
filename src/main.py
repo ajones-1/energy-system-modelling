@@ -4,7 +4,7 @@ Optimal Generation Portfolio Analysis
 This script determines the optimal generation portfolio to meet:
 - 1000 MW baseload
 - Variable demand (from time series)
-- Emissions constraint: < 50 gCO2/kWh
+- Emissions constraint: < 250 gCO2/kWh
 
 It compares different generation mixes and evaluates their technical and economic feasibility.
 """
@@ -28,7 +28,7 @@ PACKAGE_DIR = get_package_root()
 
 
 def create_constrained_network(
-    data_dir: str, year: int = 2030, co2_limit: float = 50, baseload_mw: float = 1000
+    data_dir: str, year: int = 2030, co2_limit: float = 250, baseload_mw: float = 1000
 ) -> tuple[pypsa.Network, pd.DataFrame, pd.Series]:
     """
     Create a PyPSA network with emissions and baseload constraints.
@@ -309,7 +309,7 @@ def calculate_emissions_intensity(
 
 
 def analyze_results(
-    network: pypsa.Network, total_load: pd.Series, co2_limit: float = 50
+    network: pypsa.Network, total_load: pd.Series, co2_limit: float = 250
 ) -> dict[str, Any]:
     """
     Analyze optimization results and check constraints.
@@ -631,8 +631,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--co2-limit",
         type=float,
-        default=50,
-        help="Maximum emissions intensity in gCO2/kWh (default: 50)",
+        default=250,
+        help="Maximum emissions intensity in gCO2/kWh (default: 250)",
     )
     parser.add_argument(
         "--baseload",
@@ -643,7 +643,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main(co2_limit: float = 50, baseload_mw: float = 1000) -> None:
+def main(co2_limit: float = 250, baseload_mw: float = 1000) -> None:
     """
     This functions constructs a PyPSA network and optimizes it under emissions and baseload
     constraints, then analyzes and visualizes the results.
