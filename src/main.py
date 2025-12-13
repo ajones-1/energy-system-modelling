@@ -27,7 +27,6 @@ REPO_ROOT = get_repo_root()
 # Emission factors (gCO2/kWh) - based on lifecycle emissions
 
 
-
 def create_constrained_network(
     data_dir: str, year: int = 2030, co2_limit: float = 50, baseload_mw: float = 1000
 ) -> tuple[pypsa.Network, pd.DataFrame, pd.Series]:

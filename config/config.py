@@ -1,3 +1,5 @@
+# Emission factors (gCO2/kWh) - based on lifecycle emissions
+
 EMISSION_FACTORS = {
     "wind": 11,  # lifecycle emissions
     "solar": 45,  # lifecycle emissions including manufacturing
