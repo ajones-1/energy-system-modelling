@@ -1,0 +1,181 @@
+import os
+import json
+import pandas as pd
+import matplotlib.pyplot as plt
+from loguru import logger
+import pypsa
+from pypsa.common import annuity
+
+from utils.general_functions import get_repo_root, load_data
+
+REPO_ROOT = get_repo_root()
+
+
+def main():
+    logger.info("Starting energy system optimization model...")
+
+    # Create results and data directory if they don't exist
+    results_dir = f"{REPO_ROOT}/results/example_script"
+    data_dir = f"{REPO_ROOT}/data"
+    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(data_dir, exist_ok=True)
+
+    # Load data
+    year = 2030
+    url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
+    costs_df = load_data(url, f"{data_dir}/costs_{year}.csv", use_cache=True, index_col=[0, 1])
+
+    costs_df.loc[costs_df.unit.str.contains("/kW"), "value"] *= 1e3
+    costs_df = costs_df.value.unstack().fillna({"discount rate": 0.07, "lifetime": 20, "FOM": 0})
+
+    costs_df["marginal_cost"] = costs_df["VOM"] + costs_df["fuel"] / costs_df["efficiency"]
+
+    a = costs_df.apply(lambda x: annuity(x["discount rate"], x["lifetime"]), axis=1)
+    costs_df["capital_cost"] = (a + costs_df["FOM"] / 100) * costs_df["investment"]
+
+    # Load time series data
+    resolution = 3  # hours
+    url = "https://tubcloud.tu-berlinetwork.de/s/9toBssWEdaLgHzq/download/time-series.csv"
+    time_series_df = load_data(url, f"{data_dir}/time_series_{year}.csv", use_cache=True)[
+        ::resolution
+    ]
+
+    # Initialise model
+    network = pypsa.Network()
+    network.add("Bus", "electricity", carrier="electricity")
+    network.set_snapshots(time_series_df.index)
+    logger.info(f"Network initialized with {len(network.snapshots)} snapshots.")
+
+    network.snapshot_weightings.loc[:, :] = resolution
+
+    # Add carriers for plotting, load from config file
+    with open(f"{REPO_ROOT}/config/carriers.json") as f:
+        carriers_config = json.load(f)
+    carriers = list(carriers_config["carriers"].keys())
+    colors = list(carriers_config["carriers"].values())
+
+    network.add("Carrier", carriers, color=colors)
+    logger.info("Added carriers to the network.")
+
+    # Add load to the network
+    network.add(
+        "Load",
+        "demand",
+        bus="electricity",
+        p_set=time_series_df.load_mw,
+    )
+    logger.info("Added load to the network.")
+
+    # Add a load shedding generator with high marginal cost
+    network.add(
+        "Generator",
+        "load shedding",
+        bus="electricity",
+        carrier="load shedding",
+        marginal_cost=2000,
+        p_nom=time_series_df.load_mw.max(),
+    )
+    logger.info("Added load shedding generator to the network.")
+
+    # Add renewable generators
+    network.add(
+        "Generator",
+        "wind",
+        bus="electricity",
+        carrier="wind",
+        p_max_pu=time_series_df.wind_pu,
+        capital_cost=costs_df.at["onwind", "capital_cost"],
+        marginal_cost=costs_df.at["onwind", "marginal_cost"],
+        p_nom_extendable=True,
+    )
+    logger.info("Added wind generator to the network.")
+
+    network.add(
+        "Generator",
+        "solar",
+        bus="electricity",
+        carrier="solar",
+        p_max_pu=time_series_df.pv_pu,
+        capital_cost=costs_df.at["solar", "capital_cost"],
+        marginal_cost=costs_df.at["solar", "marginal_cost"],
+        p_nom_extendable=True,
+    )
+    logger.info("Added solar generator to the network.")
+
+    # Add hydrogen storage and related components
+    network.add("Bus", "hydrogen", carrier="hydrogen")
+    logger.info("Added hydrogen bus to the network.")
+
+    network.add(
+        "Link",
+        "electrolysis",
+        bus0="electricity",
+        bus1="hydrogen",
+        carrier="electrolysis",
+        p_nom_extendable=True,
+        efficiency=costs_df.at["electrolysis", "efficiency"],
+        capital_cost=costs_df.at["electrolysis", "capital_cost"],
+    )
+    logger.info("Added electrolysis link to the network.")
+
+    network.add(
+        "Link",
+        "turbine",
+        bus0="hydrogen",
+        bus1="electricity",
+        carrier="turbine",
+        p_nom_extendable=True,
+        efficiency=costs_df.at["OCGT", "efficiency"],
+        capital_cost=costs_df.at["OCGT", "capital_cost"] / costs_df.at["OCGT", "efficiency"],
+    )
+    logger.info("Added turbine link to the network.")
+
+    logger.info("Starting optimization...")
+    network.optimize(solver_name="highs")
+    logger.info("Done.")
+
+    total_system_costs = (
+        pd.concat([network.statistics.capex(), network.statistics.opex()], axis=1)
+        .sum(axis=1)
+        .div(1e9)
+    )
+
+    logger.info("Saving summary results to CSV files...")
+    total_system_costs.to_csv(f"{results_dir}/total_system_costs.csv")
+
+    network.statistics.optimal_capacity().div(1e3).to_csv(f"{results_dir}/optimal_capacities.csv")
+
+    network.statistics.energy_balance(bus_carrier="electricity").sort_values().div(1e6).to_csv(
+        f"{results_dir}/energy_balance_electricity.csv"
+    )
+    logger.info(f"€{total_system_costs.sum():.2f} billion total annual system costs")
+    logger.info("Done.")
+
+    logger.info("Creating and saving energy balance plot...")
+    network.statistics.energy_balance.plot.area(linewidth=0, bus_carrier="electricity")
+    plt.title("Energy Balance by Carrier")
+    plt.ylabel("Energy (TWh)")
+    plt.tight_layout()
+    plt.savefig(f"{results_dir}/energy_balance_electricity.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    logger.info("Done.")
+
+    logger.info("Creating and saving marginal price plot...")
+    network.buses_t.marginal_price.plot(figsize=(7, 2))
+    plt.title("Electricity Marginal Price")
+    plt.ylabel("Price (€/MWh)")
+    plt.xlabel("Time")
+    plt.tight_layout()
+    plt.savefig(f"{results_dir}/marginal_price.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    logger.info("Done.")
+
+    logger.info("Saving optimized network...")
+    network.export_to_netcdf(f"{results_dir}/optimized_network.nc")
+    logger.info("Done.")
+
+    logger.info("Script completed successfully.")
+
+
+if __name__ == "__main__":
+    main()
