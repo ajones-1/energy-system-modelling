@@ -20,19 +20,12 @@ from loguru import logger
 from pypsa.common import annuity
 
 from utils.general_functions import get_repo_root, load_data
+from config.config import EMISSION_FACTORS
 
 REPO_ROOT = get_repo_root()
 
 # Emission factors (gCO2/kWh) - based on lifecycle emissions
-EMISSION_FACTORS = {
-    "wind": 11,  # lifecycle emissions
-    "solar": 45,  # lifecycle emissions including manufacturing
-    "OCGT": 490,  # natural gas combined cycle
-    "CCGT": 370,  # natural gas combined cycle
-    "nuclear": 12,  # lifecycle emissions
-    "coal": 820,  # lifecycle emissions
-    "biomass": 18,  # considered carbon neutral/low with BECCS potential
-}
+
 
 
 def create_constrained_network(
