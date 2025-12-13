@@ -25,6 +25,7 @@ from config.config import EMISSION_FACTORS
 REPO_ROOT = get_repo_root()
 PACKAGE_DIR = get_package_root()
 
+
 def create_constrained_network(
     data_dir: str, year: int = 2030, co2_limit: float = 50, baseload_mw: float = 1000
 ) -> tuple[pypsa.Network, pd.DataFrame, pd.Series]:
@@ -618,7 +619,7 @@ def save_results(results: dict[str, Any], network: pypsa.Network, output_dir: st
 
 def main() -> None:
     """
-    This functions constructs a PyPSA network and optimizes it under emissions and baseload 
+    This functions constructs a PyPSA network and optimizes it under emissions and baseload
     constraints, then analyzes and visualizes the results.
     """
     logger.info("=" * 80)
