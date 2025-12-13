@@ -36,7 +36,7 @@ EMISSION_FACTORS = {
 
 
 def create_constrained_network(
-    data_dir:str, year: int = 2030, co2_limit: float = 50, baseload_mw: float = 1000
+    data_dir: str, year: int = 2030, co2_limit: float = 50, baseload_mw: float = 1000
 ) -> tuple[pypsa.Network, pd.DataFrame, pd.Series]:
     """
     Create a PyPSA network with emissions and baseload constraints.
@@ -243,9 +243,9 @@ def create_constrained_network(
 
 
 def optimize_with_emissions_constraint(
-        network: pypsa.Network,
-        co2_limit: float,
-    ) -> bool:
+    network: pypsa.Network,
+    co2_limit: float,
+) -> bool:
     """
     Optimize network with emissions constraint.
 
@@ -452,9 +452,7 @@ def visualize_network_topology(network: pypsa.Network, output_dir: str) -> None:
     ]
 
     # Draw nodes (buses)
-    nx.draw_networkx_nodes(
-        G, pos, node_color=node_colors, node_size=3000, alpha=0.9, ax=ax
-    )
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors, node_size=3000, alpha=0.9, ax=ax)
 
     # Draw edges (links)
     nx.draw_networkx_edges(
@@ -474,20 +472,26 @@ def visualize_network_topology(network: pypsa.Network, output_dir: str) -> None:
 
     # Create edge labels
     edge_labels = {(u, v): data["label"] for u, v, data in G.edges(data=True)}
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels, font_size=8, alpha=0.7, ax=ax
-    )
+    nx.draw_networkx_edge_labels(G, pos, edge_labels, font_size=8, alpha=0.7, ax=ax)
 
     # Create legend
     legend_elements = [
-        plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=color,
-                   markersize=10, label=carrier.title())
+        plt.Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor=color,
+            markersize=10,
+            label=carrier.title(),
+        )
         for carrier, color in carrier_colors.items()
     ]
     ax.legend(handles=legend_elements, loc="upper right", fontsize=12)
 
-    ax.set_title("Energy System Network Topology\n(Buses and Links)",
-                 fontsize=16, fontweight="bold", pad=20)
+    ax.set_title(
+        "Energy System Network Topology\n(Buses and Links)", fontsize=16, fontweight="bold", pad=20
+    )
     ax.axis("off")
 
     plt.tight_layout()
@@ -497,9 +501,7 @@ def visualize_network_topology(network: pypsa.Network, output_dir: str) -> None:
     logger.info(f"Network topology diagram saved to {output_dir}/network_topology.png")
 
 
-def create_visualizations(
-    network: pypsa.Network, results: dict[str, Any], output_dir: str
-) -> None:
+def create_visualizations(network: pypsa.Network, results: dict[str, Any], output_dir: str) -> None:
     """
     Create visualizations of the optimal portfolio.
 
