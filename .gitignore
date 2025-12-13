@@ -118,4 +118,4 @@ cython_debug/
 # Local data files
 *.csv
 *.nc
-results/*.png
+results/**/*.png
